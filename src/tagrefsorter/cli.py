@@ -34,17 +34,23 @@ class EditState:
 def update_nb(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
     state = EditState()
 
-    def sub_editor(subtex: str) -> str:
+    def sub_editor(subtex: str, align: bool) -> str:
         match = _LATEX_TAG.search(subtex)
         if match:
             old_tag = match.group(1)
             new_tag = str(state.next_tag)
             if old_tag != new_tag:
                 state.update_map[old_tag] = new_tag
-            subtex = _LATEX_TAG.sub(rf"\\\\tag{{{new_tag}}}", subtex)
+            if align:
+                subtex = _LATEX_TAG.sub(rf"\\\\tag{{{new_tag}}}", subtex)
+            else:
+                subtex = _LATEX_TAG.sub(rf"\\tag{{{new_tag}}}", subtex)
         else:
             new_tag = str(state.next_tag)
-            subtex += rf"\\tag{{{new_tag}}}"
+            if align:
+                subtex += rf"\\tag{{{new_tag}}}"
+            else:
+                subtex += rf"\tag{{{new_tag}}}"
         state.next_tag += 1
         return subtex
 
@@ -53,19 +59,21 @@ def update_nb(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
         if match:
             align_body = match.group(1)
             parts = re.split(r"(\\\\)", align_body)
+            print(parts)
             new_parts = []
             for part in parts:
                 if part == r"\\":
                     new_parts.append(r"\\\\")
                 else:
-                    new_parts.append(sub_editor(part))
+                    new_parts.append(sub_editor(part, align=True))
+            print(new_parts)
             new_align_body = "".join(new_parts)
             latex = _LATEX_ALIGN.sub(
                 rf"\\begin{{align}}{new_align_body}\\end{{align}}",
                 latex,
             )
         else:
-            latex = sub_editor(latex)
+            latex = sub_editor(latex, align=False)
         return latex
 
     def edit_latex_blocks(text: str, editor: Callable[[str], str]) -> str:
