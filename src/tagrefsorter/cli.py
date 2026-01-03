@@ -59,14 +59,12 @@ def update_nb(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
         if match:
             align_body = match.group(1)
             parts = re.split(r"(\\\\)", align_body)
-            print(parts)
             new_parts = []
             for part in parts:
                 if part == r"\\":
                     new_parts.append(r"\\\\")
                 else:
                     new_parts.append(sub_editor(part, align=True))
-            print(new_parts)
             new_align_body = "".join(new_parts)
             latex = _LATEX_ALIGN.sub(
                 rf"\\begin{{align}}{new_align_body}\\end{{align}}",
