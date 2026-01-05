@@ -6,16 +6,23 @@ import nbformat
 import re
 from typing import Callable
 from dataclasses import dataclass, field
+from . import __version__
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Jupyter Notebook (.ipynb) を読み込み、LaTeX の tag を整理します"
+        description="Read a Jupyter Notebook (.ipynb) file and normalize LaTeX \\tag numbering"
     )
     parser.add_argument(
         "notebook",
         type=pathlib.Path,
-        help="変更する .ipynb ファイルのパス",
+        help="Path to the .ipynb file to be modified",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {__version__}",
+        help="Show the program version and exit",
     )
     return parser.parse_args()
 

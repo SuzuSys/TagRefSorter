@@ -204,8 +204,7 @@
         },
         "tagrefsorter": {
             "editable": true,
-            "file": ".",
-            "markers": "python_version >= '3.9'"
+            "file": "."
         },
         "traitlets": {
             "hashes": [

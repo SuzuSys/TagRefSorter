@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: tagrefsorter
-Version: 0.1.2
+Version: 0.1.3
 Summary: CLI tool to normalize LaTeX \tag numbering in Jupyter Notebook files
 Author-email: SuzuSys <sigmatics@outlook.jp>
 License: MIT
