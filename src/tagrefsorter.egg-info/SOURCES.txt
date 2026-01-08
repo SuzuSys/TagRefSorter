@@ -1,6 +1,12 @@
+.gitignore
+Pipfile
+Pipfile.lock
 README.md
 pyproject.toml
+.github/workflows/publish.yml
+.vscode/settings.json
 src/tagrefsorter/__init__.py
+src/tagrefsorter/_version.py
 src/tagrefsorter/cli.py
 src/tagrefsorter.egg-info/PKG-INFO
 src/tagrefsorter.egg-info/SOURCES.txt
