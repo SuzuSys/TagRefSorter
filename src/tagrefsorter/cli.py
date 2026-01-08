@@ -19,6 +19,11 @@ def parse_args():
         help="Path to the .ipynb file to be modified",
     )
     parser.add_argument(
+        "--output",
+        type=pathlib.Path,
+        help="Path to save the modified .ipynb file (if not provided, overwrites the input file)",
+    )
+    parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {__version__}",
@@ -108,6 +113,7 @@ def update_nb(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
 def main():
     args = parse_args()
     nb_path: pathlib.Path = args.notebook
+    onb_path: pathlib.Path = args.output if args.output else nb_path
 
     if not nb_path.exists():
         print(f"Error: file not found: {nb_path}", file=sys.stderr)
@@ -116,9 +122,16 @@ def main():
     if nb_path.suffix != ".ipynb":
         print("Error: input file must be .ipynb", file=sys.stderr)
         sys.exit(1)
+    
+    if args.output and onb_path.suffix != ".ipynb":
+        print("Error: output file must be .ipynb", file=sys.stderr)
+        sys.exit(1)
 
     nb = nbformat.read(nb_path, as_version=4)
     updated_nb = update_nb(nb)
-    nbformat.write(updated_nb, nb_path)
+    nbformat.write(updated_nb, onb_path)
 
-    print(f"Overwritten: {nb_path}")
+    if args.output:
+        print(f"Written: {onb_path}")
+    else:
+        print(f"Overwritten: {nb_path}")
