@@ -1,8 +1,8 @@
 [build-system]
 requires = [
-  "setuptools>=65", 
+  "setuptools>=80", 
   "wheel", 
-  "setuptools_scm[toml]"
+  "setuptools_scm[simple]>=8"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -33,4 +33,4 @@ package-dir = { "" = "src" }
 where = ["src"]
 
 [tool.setuptools_scm]
-write_to = "src/tagrefsorter/_version.py"
+version_file = "src/tagrefsorter/_version.py"
