@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5967e07f34f120e8fc3ef719f51ad58f845f2c624d209ea1045f4bad9a1f1aa0"
+            "sha256": "d5b3901fe1af1e0bf1c858b5c284f33cb7c4819da80e303b2306ab2d897ca92d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -56,6 +56,32 @@
             "markers": "python_version >= '3.10'",
             "version": "==5.9.1"
         },
+        "markdown-it-py": {
+            "hashes": [
+                "sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147",
+                "sha256:cb0a2b4aa34f932c007117b194e945bd74e0ec24133ceb5bac59009cda1cb9f3"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.10'",
+            "version": "==4.0.0"
+        },
+        "mdit-py-plugins": {
+            "hashes": [
+                "sha256:07a08422fc1936a5d26d146759e9155ea466e842f5ab2f7d2266dd084c8dab1f",
+                "sha256:f4918cb50119f50446560513a8e311d574ff6aaed72606ddae6d35716fe809c6"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.10'",
+            "version": "==0.5.0"
+        },
+        "mdurl": {
+            "hashes": [
+                "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8",
+                "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==0.1.2"
+        },
         "nbformat": {
             "hashes": [
                 "sha256:322168b14f937a5d11362988ecac2a4952d3d8e3a2cbeb2319584631226d5b3a",
@@ -72,6 +98,13 @@
             ],
             "markers": "python_version >= '3.10'",
             "version": "==4.5.1"
+        },
+        "pylatexenc": {
+            "hashes": [
+                "sha256:3dd8fd84eb46dc30bee1e23eaab8d8fb5a7f507347b23e5f38ad9675c84f40d3"
+            ],
+            "index": "pypi",
+            "version": "==2.10"
         },
         "referencing": {
             "hashes": [
@@ -204,8 +237,7 @@
         },
         "tagrefsorter": {
             "editable": true,
-            "file": ".",
-            "markers": "python_version >= '3.9'"
+            "file": "."
         },
         "traitlets": {
             "hashes": [
