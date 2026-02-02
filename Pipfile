@@ -5,10 +5,10 @@ name = "pypi"
 
 [packages]
 nbformat = "*"
-tagrefsorter = {file = ".", editable = true}
 pylatexenc = "*"
 markdown-it-py = "*"
 mdit-py-plugins = "*"
+tagrefsorter = {file = ".", editable = true}
 
 [dev-packages]
 
