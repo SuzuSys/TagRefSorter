@@ -6,6 +6,7 @@ from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.texmath import texmath_plugin
 from dataclasses import dataclass
+import re
 
 ALIGNER = ['align', 'alignat', 'gather']
 """ environments that each line has its own number """
@@ -37,6 +38,8 @@ class TagRenumberer:
         """
         tokens = self.md.parse(text)
         math_blocks: list[str] = self._search_math_block(tokens)
+        split_text: list[str] = []
+        pos = 0
         for block in math_blocks:
             tag_spec = MacroSpec('tag', MacroStandardArgsParser('*{'))
             latex_context = LatexContextDb() # note: The LatexContextDb instance is meant to be (pseudo-)immutable.
@@ -79,9 +82,15 @@ class TagRenumberer:
             out.append(block[cur:])
             # reconstruct math block
             new_block = ''.join(out)
-             # replace in text
-            text = text.replace(block, new_block, 1)
-        return text
+            # replace in text
+            idx = text.find(block, pos)
+            if idx == -1:
+                raise ValueError(f"Unexpected Error. '{block}' not found after position {pos}")
+            split_text.append(text[pos:idx])
+            split_text.append(new_block)
+            pos = idx + len(block)
+        split_text.append(text[pos:])
+        return ''.join(split_text)
     
     def renumber_refs(self, text: str) -> str:
         """
@@ -94,14 +103,22 @@ class TagRenumberer:
         """
         tokens: list[Token] = self.md.parse(text)
         inlines: list[str] = self._search_math_inline(tokens)
-
+        split_text: list[str] = []
+        pos = 0
         for inline in inlines:
-            label = inline.strip('$').strip().removeprefix('(').removesuffix(')').strip()
-            if label in self.update_map:
-                new_label = self.update_map[label]
-                new_inline = rf'$({new_label})'
-                text = text.replace(inline, new_inline, 1)
-        return text
+            if inline[:2] == '$(' and inline[-2:] == ')$':
+                label = inline.strip('$').removeprefix('(').removesuffix(')').strip()
+                if label in self.update_map:
+                    new_label = self.update_map[label]
+                    new_inline = rf'$({new_label})$'
+                    idx = text.find(inline, pos)
+                    if idx == -1:
+                        raise ValueError(f"Unexpected Error. '{inline}' not found after position {pos}")
+                    split_text.append(text[pos:idx])
+                    split_text.append(new_inline)
+                    pos = idx + len(inline)
+        split_text.append(text[pos:])
+        return ''.join(split_text)
     
     def _search_math_block(self, tokens: list[Token]) -> list[str]:
         """
