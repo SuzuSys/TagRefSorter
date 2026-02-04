@@ -8,7 +8,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tagrefsorter"
-# version = "0.1.4"
 dynamic = ["version"]
 description = "CLI tool to normalize LaTeX \\tag numbering in Jupyter Notebook files"
 readme = "README.md"
@@ -34,3 +33,6 @@ where = ["src"]
 
 [tool.setuptools_scm]
 version_file = "src/tagrefsorter/_version.py"
+
+[tool.mypy]
+mypy_path = ["typings"]

@@ -6,7 +6,6 @@ from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.texmath import texmath_plugin
 from dataclasses import dataclass
-import re
 
 ALIGNER = ['align', 'alignat', 'gather']
 """ environments that each line has its own number """
@@ -14,14 +13,21 @@ ALIGNER = ['align', 'alignat', 'gather']
 LINE_BREAKER = ["\\", "newline"]
 
 @dataclass
-class Replacement:
+class Rewrite:
     start: int
     length: int
-    label_start: int | None = None # if length > 0, specify label position
-    label_length: int | None = None # if length > 0, specify label length
+
+@dataclass
+class Insertion(Rewrite):
+    length: int = 0
+
+@dataclass
+class Replacement(Rewrite):
+    label_start: int
+    label_length: int
 
 class TagRenumberer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.update_map: dict[str, str] = {}
         self.next_tag: int = 1
         self.md = MarkdownIt().use(texmath_plugin)
@@ -43,11 +49,13 @@ class TagRenumberer:
         for block in math_blocks:
             tag_spec = MacroSpec('tag', MacroStandardArgsParser('*{'))
             latex_context = LatexContextDb() # note: The LatexContextDb instance is meant to be (pseudo-)immutable.
-            latex_context.add_context_category('custom', prepend=True, macros=[tag_spec])
+            latex_context.add_context_category(None, macros=[tag_spec], prepend=True)
             latex_walker = LatexWalker(block, latex_context=latex_context)
-            root_math_block: list[LatexMathNode] = latex_walker.get_latex_nodes(pos=0)[0]
+            root_math_block = latex_walker.get_latex_nodes(pos=0)[0]
+            if not isinstance(root_math_block[0], LatexMathNode):
+                raise ValueError("Unexpected error.")
             layer0_nodes: list[LatexNode] = root_math_block[0].nodelist
-            replacements: list[Replacement] = []
+            replacements: list[Rewrite] = []
             aligner_node = next(
                 (
                     token
@@ -71,9 +79,9 @@ class TagRenumberer:
             for rep in replacements:
                 out.append(block[cur:rep.start])
                 out.append(rf'\tag{{{self.next_tag}}}')
-                if rep.length > 0:
+                if isinstance(rep, Replacement):
                     old_tag = block[
-                        rep.label_start : rep.label_start + rep.label_length # type: ignore
+                        rep.label_start : rep.label_start + rep.label_length
                     ].strip().removeprefix('{').removesuffix('}').strip()
                     if len(old_tag) > 0:
                         self.update_map[old_tag] = str(self.next_tag)
@@ -193,7 +201,7 @@ class TagRenumberer:
             # add sentinel line breaker
             nodes.append(LatexMacroNode(macroname='\\'))
     
-    def _find_replacements_in_aligner(self, nodes: list[LatexNode]) -> list[Replacement]:
+    def _find_replacements_in_aligner(self, nodes: list[LatexNode]) -> list[Rewrite]:
         """
         Find all tag replacements in the ALIGNER environment.
 
@@ -201,9 +209,9 @@ class TagRenumberer:
             nodes (list[LatexNode]): List of LaTeX nodes in ALIGNER environment. 
                 (sentinel line breaker is assumed to be present.)
         Returns:
-            list[Replacement]: List of Replacement objects.
+            list[Insertion]: List of Replacement objects.
         """
-        replacements: list[Replacement] = []
+        replacements: list[Rewrite] = []
         exist_tag: bool = False
         exist_notag: bool = False
         tag: LatexMacroNode | None = None
@@ -215,12 +223,12 @@ class TagRenumberer:
                     # update tag
                     argnlist = tag.nodeargd.argnlist
                     # argnlist[1]: first argument
-                    label_start = argnlist[1].pos  # type: ignore
-                    label_length = argnlist[-1].pos - label_start + argnlist[-1].len  # type: ignore
+                    label_start = argnlist[1].pos
+                    label_length = argnlist[-1].pos - label_start + argnlist[-1].len
                     replacements.append(
                         Replacement(
-                            start=tag.pos, # type: ignore
-                            length=tag.len, # type: ignore
+                            start=tag.pos,
+                            length=tag.len,
                             label_start=label_start,
                             label_length=label_length,
                         )
@@ -228,9 +236,8 @@ class TagRenumberer:
                 elif not (exist_tag or exist_notag): # exist_tag mean tag* found
                     # add tag
                     replacements.append(
-                        Replacement(
-                            start=item.pos, # type: ignore
-                            length=0,
+                        Insertion(
+                            start=item.pos,
                         )
                     )
                 # reset for next line
@@ -253,7 +260,7 @@ class TagRenumberer:
                     exist_notag = True
         return replacements
     
-    def _find_replacement_in_single_line(self, nodes: list[LatexNode]) -> list[Replacement]:
+    def _find_replacement_in_single_line(self, nodes: list[LatexNode]) -> list[Rewrite]:
         """
         Find a tag replacement in a single line math block.
 
@@ -276,12 +283,12 @@ class TagRenumberer:
                 if not (isinstance(star, LatexCharsNode) and star.chars == "*"):
                     # tag, not tag*
                     argnlist = item.nodeargd.argnlist
-                    label_start = argnlist[1].pos  # type: ignore
-                    label_length = argnlist[-1].pos - label_start + argnlist[-1].len  # type: ignore
+                    label_start = argnlist[1].pos
+                    label_length = argnlist[-1].pos - label_start + argnlist[-1].len
                     return [
                         Replacement(
-                            start=item.pos, # type: ignore
-                            length=item.len, # type: ignore
+                            start=item.pos,
+                            length=item.len,
                             label_start=label_start,
                             label_length=label_length,
                         )
@@ -289,9 +296,8 @@ class TagRenumberer:
         if not no_need_tag:
             # add tag
             return [
-                Replacement(
-                    start=nodes[-1].pos + nodes[-1].len, # type: ignore
-                    length=0,
+                Insertion(
+                    start=nodes[-1].pos + nodes[-1].len,
                 )
             ]
         return []
