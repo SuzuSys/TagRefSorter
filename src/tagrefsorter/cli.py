@@ -1,12 +1,19 @@
 #!/usr/bin/env python3
 import argparse
+from dataclasses import dataclass
 import pathlib
 import sys
 import nbformat
 from . import __version__
 from .parser import TagRenumberer
 
-def parse_args():
+@dataclass
+class Args:
+    notebook: pathlib.Path
+    output: pathlib.Path | None
+    version: str | None = None
+
+def parse_args() -> Args:
     parser = argparse.ArgumentParser(
         description="Read a Jupyter Notebook (.ipynb) file and normalize LaTeX \\tag numbering"
     )
@@ -26,7 +33,8 @@ def parse_args():
         version=f"%(prog)s {__version__}",
         help="Show the program version and exit",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    return Args(args.notebook, args.output)
 
 def update_nb(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
     renumberer = TagRenumberer()
@@ -41,8 +49,8 @@ def update_nb(nb: nbformat.NotebookNode) -> nbformat.NotebookNode:
 
 def main():
     args = parse_args()
-    nb_path: pathlib.Path = args.notebook
-    onb_path: pathlib.Path = args.output if args.output else nb_path
+    nb_path = args.notebook
+    onb_path = args.output if args.output else nb_path
 
     if not nb_path.exists():
         print(f"Error: file not found: {nb_path}", file=sys.stderr)
