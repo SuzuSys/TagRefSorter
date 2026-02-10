@@ -1,6 +1,5 @@
 import pytest
 from markdown_it.token import Token
-SMB_FIXTURE_DIR = "tests/unit/_search_math_block/smb_fixtures.ipynb"
 
 EXPECTED_RESULTS = [
     [],
