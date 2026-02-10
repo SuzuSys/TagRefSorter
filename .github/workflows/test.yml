@@ -47,3 +47,11 @@ jobs:
       - name: Run minimal command
         run: |
           tagrefsorter --version
+
+      - name: Poetry Install Dependencies
+        run: |
+          poetry install --no-interaction
+
+      - name: Run Tests
+        run: |
+          poetry run pytest
