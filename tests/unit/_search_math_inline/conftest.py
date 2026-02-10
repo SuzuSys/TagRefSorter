@@ -1,4 +1,3 @@
-import nbformat
 import pytest
 from markdown_it.token import Token
 
