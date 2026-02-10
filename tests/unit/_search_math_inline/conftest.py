@@ -1,7 +1,7 @@
 import pytest
 from markdown_it.token import Token
 
-expected_results = [
+EXPECTED_RESULTS = [
     [],
     [r"$x=y$"],
 ]
@@ -21,5 +21,5 @@ def smi_case(md_parser, smi_cells) -> list[tuple[list[Token], list[str]]]:
     :return: List of tuples, where each tuple contains a list of Tokens and a list of expected math inline strings
     :rtype: list[tuple[list[Token], list[str]]]
     """
-    return [(md_parser.parse(cell.source), expected_results[i]) for i, cell in enumerate(smi_cells)]
+    return [(md_parser.parse(cell.source), EXPECTED_RESULTS[i]) for i, cell in enumerate(smi_cells)]
 
