@@ -29,7 +29,7 @@ $$
 ## TagRenumberer.\_search_math_block
 
 ```python
-TagRenumberer._search_math_block(tokens: list[Token]) -> list[str]
+TagRenumberer._search_math_block(tokens: list[Token]) -> list[tuple[list[LatexNode], str]]
 ```
 
 - テストケース
