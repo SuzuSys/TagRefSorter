@@ -56,6 +56,10 @@ jobs:
         run: |
           poetry run pytest
 
+      - name: Make CLI executable
+        run: |
+          chmod +x src/tagrefsorter/cli.py
+
       - name: Run Ruff
         run: |
           poetry run ruff check .
