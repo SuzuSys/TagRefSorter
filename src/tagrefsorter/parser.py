@@ -1,67 +1,79 @@
 #!/usr/bin/env python3
 
-from pylatexenc.latexwalker import LatexWalker, LatexEnvironmentNode, LatexMacroNode, LatexNode, LatexMathNode, LatexCommentNode, LatexCharsNode
-from pylatexenc.macrospec import MacroSpec, LatexContextDb, MacroStandardArgsParser
+import logging
+from dataclasses import dataclass
+
 from markdown_it import MarkdownIt
 from markdown_it.token import Token
 from mdit_py_plugins.texmath import texmath_plugin
-from dataclasses import dataclass
+from pylatexenc.latexwalker import (
+    LatexCharsNode,
+    LatexCommentNode,
+    LatexEnvironmentNode,
+    LatexMacroNode,
+    LatexMathNode,
+    LatexNode,
+    LatexWalker,
+)
+from pylatexenc.macrospec import LatexContextDb, MacroSpec, MacroStandardArgsParser
 
-ALIGNER = ['align', 'alignat', 'gather']
+logger = logging.getLogger(__name__)
+
+ALIGNER = ["align", "alignat", "gather"]
 """ environments that each line has its own number """
 
 LINE_BREAKER = ["\\", "newline"]
+
 
 @dataclass
 class Rewrite:
     start: int
     length: int
 
+
 @dataclass
 class Insertion(Rewrite):
     length: int = 0
+
 
 @dataclass
 class Replacement(Rewrite):
     label_start: int
     label_length: int
 
+
 class TagRenumberer:
     def __init__(self) -> None:
         self.update_map: dict[str, str] = {}
         self.next_tag: int = 1
         self.md = MarkdownIt().use(texmath_plugin)
-        self.md.block.ruler.disable('math_block_eqno') # disable eqno parsing like "$$...$$ (1)"
-    
+        self.md.block.ruler.disable("math_block_eqno")  # disable eqno parsing like "$$...$$ (1)"
+        tag_spec = MacroSpec("tag", MacroStandardArgsParser("*{"))
+        self.latex_context = (
+            LatexContextDb()
+        )  # note: The LatexContextDb instance is meant to be (pseudo-)immutable.
+        self.latex_context.add_context_category(None, macros=[tag_spec], prepend=True)
+
     def renumber_tags(self, text: str) -> str:
-        """
-        Renumber tags.
+        """Renumber tags.
 
         Args:
             text (str): text of a markdown cell
         Returns:
             str: updated text
+
         """
         tokens = self.md.parse(text)
-        math_blocks: list[str] = self._search_math_block(tokens)
+        math_blocks: list[tuple[list[LatexNode], str]] = self._search_math_block(tokens)
         split_text: list[str] = []
         pos = 0
-        for block in math_blocks:
-            tag_spec = MacroSpec('tag', MacroStandardArgsParser('*{'))
-            latex_context = LatexContextDb() # note: The LatexContextDb instance is meant to be (pseudo-)immutable.
-            latex_context.add_context_category(None, macros=[tag_spec], prepend=True)
-            latex_walker = LatexWalker(block, latex_context=latex_context)
-            root_math_block = latex_walker.get_latex_nodes(pos=0)[0]
-            if not isinstance(root_math_block[0], LatexMathNode):
-                raise ValueError("Unexpected error.")
-            layer0_nodes: list[LatexNode] = root_math_block[0].nodelist
+        for layer0_nodes, content in math_blocks:
             replacements: list[Rewrite] = []
             aligner_node = next(
                 (
                     token
                     for token in layer0_nodes
-                    if isinstance(token, LatexEnvironmentNode)
-                    and token.environmentname in ALIGNER
+                    if isinstance(token, LatexEnvironmentNode) and token.environmentname in ALIGNER
                 ),
                 None,
             )
@@ -77,86 +89,103 @@ class TagRenumberer:
             out: list[str] = []
             cur = 0
             for rep in replacements:
-                out.append(block[cur:rep.start])
-                out.append(rf'\tag{{{self.next_tag}}}')
+                out.append(content[cur : rep.start])
+                out.append(rf"\tag{{{self.next_tag}}}")
                 if isinstance(rep, Replacement):
-                    old_tag = block[
-                        rep.label_start : rep.label_start + rep.label_length
-                    ].strip().removeprefix('{').removesuffix('}').strip()
+                    old_tag = (
+                        content[rep.label_start : rep.label_start + rep.label_length]
+                        .strip()
+                        .removeprefix("{")
+                        .removesuffix("}")
+                        .strip()
+                    )
                     if len(old_tag) > 0:
                         self.update_map[old_tag] = str(self.next_tag)
                 self.next_tag += 1
                 cur = rep.start + rep.length
-            out.append(block[cur:])
+            out.append(content[cur:])
             # reconstruct math block
-            new_block = ''.join(out)
+            new_block = "".join(out)
             # replace in text
-            idx = text.find(block, pos)
-            if idx == -1:
-                raise ValueError(f"Unexpected Error. '{block}' not found after position {pos}")
+            idx = text.find(content, pos)
             split_text.append(text[pos:idx])
             split_text.append(new_block)
-            pos = idx + len(block)
+            pos = idx + len(content)
         split_text.append(text[pos:])
-        return ''.join(split_text)
-    
+        return "".join(split_text)
+
     def renumber_refs(self, text: str) -> str:
-        """
-        Renumber refs.
+        """Renumber refs.
 
         Args:
             text (str): text of a markdown cell
         Returns:
             str: updated text
+
         """
         tokens: list[Token] = self.md.parse(text)
         inlines: list[str] = self._search_math_inline(tokens)
         split_text: list[str] = []
         pos = 0
         for inline in inlines:
-            if inline[:2] == '$(' and inline[-2:] == ')$':
-                label = inline.strip('$').removeprefix('(').removesuffix(')').strip()
+            if inline[:2] == "$(" and inline[-2:] == ")$":
+                label = inline.strip("$").removeprefix("(").removesuffix(")").strip()
                 if label in self.update_map:
                     new_label = self.update_map[label]
-                    new_inline = rf'$({new_label})$'
+                    new_inline = rf"$({new_label})$"
                     idx = text.find(inline, pos)
-                    if idx == -1:
-                        raise ValueError(f"Unexpected Error. '{inline}' not found after position {pos}")
                     split_text.append(text[pos:idx])
                     split_text.append(new_inline)
                     pos = idx + len(inline)
         split_text.append(text[pos:])
-        return ''.join(split_text)
-    
-    def _search_math_block(self, tokens: list[Token]) -> list[str]:
-        """
-        Search math_block tokens recursively.
+        return "".join(split_text)
+
+    def _search_math_block(self, tokens: list[Token]) -> list[tuple[list[LatexNode], str]]:
+        """Search math_block tokens recursively.
+
         1. If token type is "math_block", append its content to results.
         2. If token has children, search children recursively.
         3. Return results.
+
         Args:
             tokens (list[Token]): List of tokens to search.
+
         Returns:
-            list[str]: List of math block contents.
+            list[tuple[list[LatexNode], str]]: List of tuples of
+            LaTeX nodes and their original content.
+
         """
-        results: list[str] = []
+        results: list[tuple[list[LatexNode], str]] = []
         for token in tokens:
             if token.type == "math_block":
-                results.append(f"$${token.content}$$")
+                content = f"$${token.content}$$"
+                latex_walker = LatexWalker(content, latex_context=self.latex_context)
+                root_math_block = latex_walker.get_latex_nodes(pos=0)[0]
+                if not isinstance(root_math_block[0], LatexMathNode):
+                    logger.warning(
+                        "Unexpected structure in math block. The content of token: %s",
+                        token.content,
+                    )
+                    continue
+                layer0_nodes: list[LatexNode] = root_math_block[0].nodelist
+                results.append((layer0_nodes, f"$${token.content}$$"))
             elif token.children:
                 results += self._search_math_block(token.children)
         return results
-    
+
     def _search_math_inline(self, tokens: list[Token]) -> list[str]:
-        """
-        Search math_inline tokens recursively.
+        """Search math_inline tokens recursively.
+
         1. If token type is "math_inline", append its content to results.
         2. If token has children, search children recursively.
         3. Return results.
+
         Args:
             tokens (list[Token]): List of tokens to search.
+
         Returns:
             list[str]: List of math inline contents.
+
         """
         results: list[str] = []
         for token in tokens:
@@ -165,16 +194,16 @@ class TagRenumberer:
             elif token.children:
                 results += self._search_math_inline(token.children)
         return results
-    
-    def _ensure_sentinel_line_breaker_inplace(self, nodes: list[LatexNode]) -> None:
-        """
-        Add a line breaker node with a sentinel value.
 
-        In the ALIGNER environment, a line breaker is placed at the end of the final line as a sentinel, 
-        enabling uniform processing of all lines.
+    def _ensure_sentinel_line_breaker_inplace(self, nodes: list[LatexNode]) -> None:
+        """Add a line breaker node with a sentinel value.
+
+        In the ALIGNER environment, a line breaker is placed at the end of the final line
+        as a sentinel, enabling uniform processing of all lines.
 
         Args:
             nodes (list[LatexNode]): List of LaTeX nodes in ALIGNER environment.
+
         """
         need_sentinel = False
         for item in reversed(nodes):
@@ -182,34 +211,33 @@ class TagRenumberer:
                 if item.macroname in LINE_BREAKER:
                     # sentinel found
                     break
-                elif item.macroname == 'tag' or item.macroname == 'notag':
+                if item.macroname in {"tag", "notag"}:
                     # ignore tag, tag*, and notag macros
                     continue
-                else:
-                    need_sentinel = True
-                    break
-            elif isinstance(item, LatexCommentNode):
-                # ignore comments
-                continue
-            elif isinstance(item, LatexCharsNode) and item.chars.strip() == '':
-                # ignore whitespace
-                continue
-            else:
                 need_sentinel = True
                 break
+            if isinstance(item, LatexCommentNode):
+                # ignore comments
+                continue
+            if isinstance(item, LatexCharsNode) and item.chars.strip() == "":
+                # ignore whitespace
+                continue
+            need_sentinel = True
+            break
         if need_sentinel:
             # add sentinel line breaker
-            nodes.append(LatexMacroNode(macroname='\\'))
-    
+            nodes.append(LatexMacroNode(macroname="\\"))
+
     def _find_replacements_in_aligner(self, nodes: list[LatexNode]) -> list[Rewrite]:
-        """
-        Find all tag replacements in the ALIGNER environment.
+        """Find all tag replacements in the ALIGNER environment.
 
         Args:
-            nodes (list[LatexNode]): List of LaTeX nodes in ALIGNER environment. 
+            nodes (list[LatexNode]): List of LaTeX nodes in ALIGNER environment.
                 (sentinel line breaker is assumed to be present.)
+
         Returns:
             list[Insertion]: List of Replacement objects.
+
         """
         replacements: list[Rewrite] = []
         exist_tag: bool = False
@@ -218,7 +246,7 @@ class TagRenumberer:
         for item in nodes:
             if not isinstance(item, LatexMacroNode):
                 continue
-            elif item.macroname in LINE_BREAKER:
+            if item.macroname in LINE_BREAKER:
                 if tag:
                     # update tag
                     argnlist = tag.nodeargd.argnlist
@@ -231,14 +259,14 @@ class TagRenumberer:
                             length=tag.len,
                             label_start=label_start,
                             label_length=label_length,
-                        )
+                        ),
                     )
-                elif not (exist_tag or exist_notag): # exist_tag mean tag* found
+                elif not (exist_tag or exist_notag):  # exist_tag mean tag* found
                     # add tag
                     replacements.append(
                         Insertion(
                             start=item.pos,
-                        )
+                        ),
                     )
                 # reset for next line
                 exist_tag = False
@@ -254,26 +282,27 @@ class TagRenumberer:
                     if not (isinstance(star, LatexCharsNode) and star.chars == "*"):
                         # tag, not tag*
                         tag = item
-                    
+
                 elif item.macroname == "notag":
                     # notag found
                     exist_notag = True
         return replacements
-    
+
     def _find_replacement_in_single_line(self, nodes: list[LatexNode]) -> list[Rewrite]:
-        """
-        Find a tag replacement in a single line math block.
+        """Find a tag replacement in a single line math block.
 
         Args:
             nodes (list[LatexNode]): List of LaTeX nodes in the math block.
+
         Returns:
             list[Replacement]: List of Replacement objects. (length is 0 or 1)
+
         """
         no_need_tag = False
         for item in reversed(nodes):
             if not isinstance(item, LatexMacroNode):
                 continue
-            elif item.macroname == "notag":
+            if item.macroname == "notag":
                 no_need_tag = True
             elif item.macroname == "tag":
                 no_need_tag = True
@@ -291,13 +320,13 @@ class TagRenumberer:
                             length=item.len,
                             label_start=label_start,
                             label_length=label_length,
-                        )
+                        ),
                     ]
         if not no_need_tag:
             # add tag
             return [
                 Insertion(
                     start=nodes[-1].pos + nodes[-1].len,
-                )
+                ),
             ]
         return []
