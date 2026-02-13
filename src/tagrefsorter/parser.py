@@ -47,9 +47,8 @@ class TagRenumberer:
         self.md = MarkdownIt().use(texmath_plugin)
         self.md.block.ruler.disable("math_block_eqno")  # disable eqno parsing like "$$...$$ (1)"
         tag_spec = MacroSpec("tag", MacroStandardArgsParser("*{"))
-        self.latex_context = (
-            LatexContextDb()
-        )  # note: The LatexContextDb instance is meant to be (pseudo-)immutable.
+        self.latex_context = LatexContextDb()
+        # note: The LatexContextDb instance is meant to be (pseudo-)immutable.
         self.latex_context.add_context_category(None, macros=[tag_spec], prepend=True)
 
     def renumber_tags(self, text: str) -> str:
