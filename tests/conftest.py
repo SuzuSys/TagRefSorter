@@ -15,6 +15,7 @@ def md_parser() -> MarkdownIt:
 
 @pytest.fixture(scope="session")
 def latex_context() -> LatexContextDb:
+    """LatexContextDb with custom tag macro specifications."""
     tag_spec = MacroSpec("tag", MacroStandardArgsParser("*{"))
     latex_context = LatexContextDb()
     latex_context.add_context_category(None, macros=[tag_spec], prepend=True)
