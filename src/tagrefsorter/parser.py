@@ -40,6 +40,12 @@ class Replacement(Rewrite):
     label_length: int
 
 
+@dataclass
+class MathBlock:
+    content: str
+    layer0_nodes: list[LatexNode]
+
+
 class TagRenumberer:
     def __init__(self) -> None:
         self.update_map: dict[str, str] = {}
@@ -61,10 +67,12 @@ class TagRenumberer:
 
         """
         tokens = self.md.parse(text)
-        math_blocks: list[tuple[list[LatexNode], str]] = self._search_math_block(tokens)
+        math_blocks: list[MathBlock] = self._search_math_block(tokens)
         split_text: list[str] = []
         pos = 0
-        for layer0_nodes, content in math_blocks:
+        for math_block in math_blocks:
+            layer0_nodes = math_block.layer0_nodes
+            content = math_block.content
             replacements: list[Rewrite] = []
             aligner_node = next(
                 (
@@ -137,7 +145,7 @@ class TagRenumberer:
         split_text.append(text[pos:])
         return "".join(split_text)
 
-    def _search_math_block(self, tokens: list[Token]) -> list[tuple[list[LatexNode], str]]:
+    def _search_math_block(self, tokens: list[Token]) -> list[MathBlock]:
         """Search math_block tokens recursively.
 
         1. If token type is "math_block", append its content to results.
@@ -152,7 +160,7 @@ class TagRenumberer:
             LaTeX nodes and their original content.
 
         """
-        results: list[tuple[list[LatexNode], str]] = []
+        results: list[MathBlock] = []
         for token in tokens:
             if token.type == "math_block":
                 content = f"$${token.content}$$"
@@ -165,7 +173,7 @@ class TagRenumberer:
                     )
                     continue
                 layer0_nodes: list[LatexNode] = root_math_block[0].nodelist
-                results.append((layer0_nodes, f"$${token.content}$$"))
+                results.append(MathBlock(layer0_nodes=layer0_nodes, content=f"$${token.content}$$"))
             elif token.children:
                 results += self._search_math_block(token.children)
         return results
