@@ -30,9 +30,9 @@ def smb_case(md_parser, smb_cells, latex_context) -> list[ExpectedCellResult]:
     :rtype: list[ExpectedCellResult]
     """
     expected_results: list[ExpectedCellResult] = []
-    for i, exp_strs in enumerate(EXPECTED_RESULTS_STR):
+    for smb_cell, exp_strs in zip(smb_cells, EXPECTED_RESULTS_STR, strict=True):
         expected_cell_result = ExpectedCellResult()
-        expected_cell_result.input = md_parser.parse(smb_cells[i].source)
+        expected_cell_result.input = md_parser.parse(smb_cell.source)
         for exp_str in exp_strs:
             latex_walker = LatexWalker(exp_str, latex_context=latex_context)
             root_math_block = latex_walker.get_latex_nodes(pos=0)[0]
