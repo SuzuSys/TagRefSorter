@@ -86,7 +86,7 @@ class TagRenumberer:
                 # process each line in aligner environment
                 nodes = aligner_node.nodelist
                 self._ensure_sentinel_line_breaker_inplace(nodes)
-                replacements = self._find_replacements_in_aligner(nodes)
+                replacements = self._find_rewrites_in_aligner(nodes)
             else:
                 # process single line math block
                 replacements = self._find_replacement_in_single_line(layer0_nodes)
@@ -233,15 +233,15 @@ class TagRenumberer:
             # add sentinel line breaker
             nodes.append(LatexMacroNode(macroname="\\"))
 
-    def _find_replacements_in_aligner(self, nodes: list[LatexNode]) -> list[Rewrite]:
-        """Find all tag replacements in the ALIGNER environment.
+    def _find_rewrites_in_aligner(self, nodes: list[LatexNode]) -> list[Rewrite]:
+        """Find all tag replacements and insertion in the ALIGNER environment.
 
         Args:
             nodes (list[LatexNode]): List of LaTeX nodes in ALIGNER environment.
                 (sentinel line breaker is assumed to be present.)
 
         Returns:
-            list[Insertion]: List of Replacement objects.
+            list[Rewrite]: List of Rewrite objects.
 
         """
         replacements: list[Rewrite] = []
