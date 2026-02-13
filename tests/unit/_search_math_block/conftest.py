@@ -1,25 +1,45 @@
+from dataclasses import dataclass, field
+
 import pytest
 from markdown_it.token import Token
+from pylatexenc.latexwalker import LatexMathNode, LatexNode, LatexWalker
 
-EXPECTED_RESULTS = [
+from tagrefsorter.parser import MathBlock
+
+EXPECTED_RESULTS_STR = [
     [],
     [r"$$x\tag 1$$"],
 ]
 
 
-@pytest.fixture
-def smb_case(md_parser, smb_cells) -> list[tuple[list[Token], list[str]]]:
+@dataclass
+class ExpectedCellResult:
+    input: list[Token] = field(default_factory=list)
+    output: list[MathBlock] = field(default_factory=list)
+
+
+@pytest.fixture(scope="session")
+def smb_case(md_parser, smb_cells, latex_context) -> list[ExpectedCellResult]:
     """Fixture that provides test cases for the _search_math_block function.
 
     It parses the source of each cell in the smb_cells fixture using the md_parser
     and pairs it with the expected results.
 
-    :param md_parser: MarkdownIt parser with texmath plugin enabled
-    :type md_parser: MarkdownIt
-    :param smb_cells: List of notebook cells loaded from the fixture file
-    :type smb_cells: list[NotebookNode]
-    :return: List of tuples, where each tuple contains a list of Tokens
-    and a list of expected math block strings
-    :rtype: list[tuple[list[Token], list[str]]]
+    :return: List of ExpectedCellResult objects, each containing
+    a list of tuples (list[LatexNode], str) representing expected output
+    :rtype: list[ExpectedCellResult]
     """
-    return [(md_parser.parse(cell.source), EXPECTED_RESULTS[i]) for i, cell in enumerate(smb_cells)]
+    expected_results: list[ExpectedCellResult] = []
+    for i, exp_strs in enumerate(EXPECTED_RESULTS_STR):
+        expected_cell_result = ExpectedCellResult()
+        expected_cell_result.input = md_parser.parse(smb_cells[i].source)
+        for exp_str in exp_strs:
+            latex_walker = LatexWalker(exp_str, latex_context=latex_context)
+            root_math_block = latex_walker.get_latex_nodes(pos=0)[0]
+            assert isinstance(root_math_block[0], LatexMathNode)  # Unexpected error check
+            layer0_nodes: list[LatexNode] = root_math_block[0].nodelist
+            expected_cell_result.output.append(
+                MathBlock(layer0_nodes=layer0_nodes, content=exp_str),
+            )
+        expected_results.append(expected_cell_result)
+    return expected_results
