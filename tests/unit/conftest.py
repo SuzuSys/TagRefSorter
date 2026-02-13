@@ -10,20 +10,26 @@ _ENSURE_SENTINEL_LINE_BREAKER_INPLACE_FIXTURE_DIR = (
 
 @pytest.fixture(scope="session")
 def smb_cells() -> list[nbformat.NotebookNode]:
-    """Load notebook cells from the specified fixture file."""
+    """Load notebook cells from the specified fixture file.
+    Cells that type is 'markdown' are returned. Cells that type is 'cell' are ignored.
+    """
     nb = nbformat.read(_SEARCH_MATH_BLOCK_FIXTURE_DIR, as_version=4)
-    return nb.cells
+    return [cell for cell in nb.cells if cell.cell_type == "markdown"]
 
 
 @pytest.fixture(scope="session")
 def smi_cells() -> list[nbformat.NotebookNode]:
-    """Load notebook cells from the specified fixture file."""
+    """Load notebook cells from the specified fixture file.
+    Cells that type is 'markdown' are returned. Cells that type is 'cell' are ignored.
+    """
     nb = nbformat.read(_SEARCH_MATH_INLINE_FIXTURE_DIR, as_version=4)
-    return nb.cells
+    return [cell for cell in nb.cells if cell.cell_type == "markdown"]
 
 
 @pytest.fixture(scope="session")
 def eslbi_cells() -> list[nbformat.NotebookNode]:
-    """Load notebook cells from the specified fixture file."""
+    """Load notebook cells from the specified fixture file.
+    Cells that type is 'markdown' are returned. Cells that type is 'cell' are ignored.
+    """
     nb = nbformat.read(_ENSURE_SENTINEL_LINE_BREAKER_INPLACE_FIXTURE_DIR, as_version=4)
-    return nb.cells
+    return [cell for cell in nb.cells if cell.cell_type == "markdown"]
