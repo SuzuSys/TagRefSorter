@@ -2,7 +2,11 @@ from pylatexenc.latexwalker import LatexNode
 
 class ParsedMacroArgs:
     argnlist: list[LatexNode]
-    def __init__(self, argnlist: list[LatexNode] | None = None, argspec: str = "") -> None: ...
+    def __init__(
+        self,
+        argnlist: list[LatexNode | None] | None = None,
+        argspec: str = "",
+    ) -> None: ...
     def to_json_object(self) -> dict: ...
 
 class MacroStandardArgsParser:
