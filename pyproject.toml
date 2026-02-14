@@ -72,6 +72,6 @@ max-args = 6
     "S101",    # assert allowed in tests
     "SLF001",  # Checks for accesses on "private" class members
     "PLR2004", # Magic values allowed in tests
-    "ANN",     # Type annotations optional in tests
+    # "ANN",     # Type annotations optional in tests
     "D",       # Docstrings optional in tests
 ]

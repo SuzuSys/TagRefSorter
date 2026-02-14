@@ -1,3 +1,6 @@
+from dataclasses import dataclass, field
+
+from markdown_it.token import Token
 from pylatexenc.latexwalker import (
     LatexCharsNode,
     LatexCommentNode,
@@ -8,6 +11,12 @@ from pylatexenc.latexwalker import (
 )
 
 from tagrefsorter import parser
+
+
+@dataclass
+class ExpectedCellResult:
+    input: list[Token] = field(default_factory=list)
+    output: list[parser.MathBlock] = field(default_factory=list)
 
 
 def _compare_math_nodes(actual: LatexMathNode, expected: LatexMathNode) -> None:
@@ -40,7 +49,8 @@ def _compare_macro_nodes(actual: LatexMacroNode, expected: LatexMacroNode) -> No
 
 
 def _compare_environment_nodes(
-    actual: LatexEnvironmentNode, expected: LatexEnvironmentNode,
+    actual: LatexEnvironmentNode,
+    expected: LatexEnvironmentNode,
 ) -> None:
     assert actual.environmentname == expected.environmentname
     for act_node, exp_node in zip(actual.nodelist, expected.nodelist, strict=True):
@@ -64,7 +74,7 @@ def compare_latex_nodes(actual: LatexNode, expected: LatexNode) -> None:
         _compare_environment_nodes(actual, expected)
 
 
-def test_smb(smb_case):
+def test_smb(smb_case: list[ExpectedCellResult]) -> None:
     tag_renumberer = parser.TagRenumberer()
     for expected_cell_result in smb_case:
         math_blocks = tag_renumberer._search_math_block(expected_cell_result.input)

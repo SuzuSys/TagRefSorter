@@ -1,10 +1,15 @@
-from dataclasses import dataclass, field
+from collections.abc import Callable
 
 import pytest
-from markdown_it.token import Token
-from pylatexenc.latexwalker import LatexMathNode, LatexNode, LatexWalker
+from markdown_it import MarkdownIt
+from nbformat import NotebookNode
+from pylatexenc.latexwalker import LatexNode
 
 from tagrefsorter.parser import MathBlock
+
+from .test_smb import ExpectedCellResult
+
+_SEARCH_MATH_BLOCK_FIXTURE_DIR = "tests/unit/_search_math_block/smb_fixtures.ipynb"
 
 EXPECTED_RESULTS_STR = [
     [],
@@ -12,14 +17,12 @@ EXPECTED_RESULTS_STR = [
 ]
 
 
-@dataclass
-class ExpectedCellResult:
-    input: list[Token] = field(default_factory=list)
-    output: list[MathBlock] = field(default_factory=list)
-
-
 @pytest.fixture(scope="session")
-def smb_case(md_parser, smb_cells, latex_context) -> list[ExpectedCellResult]:
+def smb_case(
+    md_parser: MarkdownIt,
+    load_markdown_cells: Callable[[str], list[NotebookNode]],
+    get_layer0_nodes: Callable[[str], list[LatexNode]],
+) -> list[ExpectedCellResult]:
     """Fixture that provides test cases for the _search_math_block function.
 
     It parses the source of each cell in the smb_cells fixture using the md_parser
@@ -29,15 +32,13 @@ def smb_case(md_parser, smb_cells, latex_context) -> list[ExpectedCellResult]:
     a list of tuples (list[LatexNode], str) representing expected output
     :rtype: list[ExpectedCellResult]
     """
+    smb_cells = load_markdown_cells(_SEARCH_MATH_BLOCK_FIXTURE_DIR)
     expected_results: list[ExpectedCellResult] = []
     for smb_cell, exp_strs in zip(smb_cells, EXPECTED_RESULTS_STR, strict=True):
         expected_cell_result = ExpectedCellResult()
         expected_cell_result.input = md_parser.parse(smb_cell.source)
         for exp_str in exp_strs:
-            latex_walker = LatexWalker(exp_str, latex_context=latex_context)
-            root_math_block = latex_walker.get_latex_nodes(pos=0)[0]
-            assert isinstance(root_math_block[0], LatexMathNode)  # Unexpected error check
-            layer0_nodes: list[LatexNode] = root_math_block[0].nodelist
+            layer0_nodes = get_layer0_nodes(exp_str)
             expected_cell_result.output.append(
                 MathBlock(layer0_nodes=layer0_nodes, content=exp_str),
             )

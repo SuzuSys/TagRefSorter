@@ -1,11 +1,18 @@
 from copy import deepcopy
+from dataclasses import dataclass, field
 
-from pylatexenc.latexwalker import LatexMacroNode
+from pylatexenc.latexwalker import LatexMacroNode, LatexNode
 
 from tagrefsorter import parser
 
 
-def test_eslbi(eslbi_case):
+@dataclass
+class ExpectedCellResult:
+    input: list[LatexNode] = field(default_factory=list)
+    should_add: bool = False
+
+
+def test_eslbi(eslbi_case: list[ExpectedCellResult]) -> None:
     tag_renumberer = parser.TagRenumberer()
     for case in eslbi_case:
         input_copy = deepcopy(case.input)

@@ -1,7 +1,9 @@
+from markdown_it.token import Token
+
 from tagrefsorter import parser
 
 
-def test_smi(smi_case):
+def test_smi(smi_case: list[tuple[list[Token], list[str]]]) -> None:
     tag_renumberer = parser.TagRenumberer()
     for source, expected in smi_case:
         math_inlines = tag_renumberer._search_math_inline(source)
