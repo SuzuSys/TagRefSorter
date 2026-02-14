@@ -89,7 +89,7 @@ class TagRenumberer:
                 rewrites = self._find_rewrites_in_aligner(nodes)
             else:
                 # process single line math block
-                rewrites = self._find_replacement_in_single_line(layer0_nodes)
+                rewrites = self._find_rewrite_in_single_line(layer0_nodes)
             # apply replacements in reverse order
             out: list[str] = []
             cur = 0
@@ -244,7 +244,7 @@ class TagRenumberer:
             list[Rewrite]: List of Rewrite objects.
 
         """
-        replacements: list[Rewrite] = []
+        rewrites: list[Rewrite] = []
         exist_tag: bool = False
         exist_notag: bool = False
         tag: LatexMacroNode | None = None
@@ -258,7 +258,7 @@ class TagRenumberer:
                     # argnlist[1]: first argument
                     label_start = argnlist[1].pos
                     label_length = argnlist[-1].pos - label_start + argnlist[-1].len
-                    replacements.append(
+                    rewrites.append(
                         Replacement(
                             start=tag.pos,
                             length=tag.len,
@@ -268,7 +268,7 @@ class TagRenumberer:
                     )
                 elif not (exist_tag or exist_notag):  # exist_tag mean tag* found
                     # add tag
-                    replacements.append(
+                    rewrites.append(
                         Insertion(
                             start=item.pos,
                         ),
@@ -291,10 +291,10 @@ class TagRenumberer:
                 elif item.macroname == "notag":
                     # notag found
                     exist_notag = True
-        return replacements
+        return rewrites
 
-    def _find_replacement_in_single_line(self, nodes: list[LatexNode]) -> list[Rewrite]:
-        """Find a tag replacement in a single line math block.
+    def _find_rewrite_in_single_line(self, nodes: list[LatexNode]) -> list[Rewrite]:
+        """Find a tag replacement or a insertion in a single line math block.
 
         Args:
             nodes (list[LatexNode]): List of LaTeX nodes in the math block.
