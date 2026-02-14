@@ -16,7 +16,7 @@ REWRITE_SPECS: list[list[InsertionSpecData | ReplacementSpecData]] = [
 ]
 
 
-# Note: 1 Cell = 1 Environment(ALIGNER)
+# Note: 1 Cell = 1 math block = 1 Environment(ALIGNER)
 @pytest.fixture(scope="session")
 def fria_case(
     load_markdown_cells: Callable[[str], list[NotebookNode]],
