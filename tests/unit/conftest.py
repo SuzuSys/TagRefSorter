@@ -1,4 +1,3 @@
-import re
 from collections.abc import Callable
 
 import nbformat
@@ -7,6 +6,7 @@ from pylatexenc.latexwalker import LatexEnvironmentNode, LatexMathNode, LatexNod
 from pylatexenc.macrospec import LatexContextDb
 
 from tagrefsorter.parser import ALIGNER
+from tests.constants import RE_BLOCK, RE_INLINE
 
 
 @pytest.fixture(scope="session")
@@ -23,10 +23,6 @@ def load_markdown_cells() -> Callable[[str], list[nbformat.NotebookNode]]:
         return [cell for cell in nb.cells if cell.cell_type == "markdown"]
 
     return _loader
-
-
-RE_BLOCK = re.compile(r"^\${2}([^$]*?)\${2}$", re.MULTILINE)
-RE_INLINE = re.compile(r"^\$(\S[^$]*?[^\s\\]{1}?)\$$")
 
 
 @pytest.fixture(scope="session")
