@@ -303,6 +303,12 @@ class TagRenumberer:
             list[Replacement]: List of Replacement objects. (length is 0 or 1)
 
         """
+        if len(nodes) == 0:
+            # contents is "$$$$"
+            # add tag
+            return [
+                Insertion(start=2),
+            ]
         no_need_tag = False
         for item in reversed(nodes):
             if not isinstance(item, LatexMacroNode):
