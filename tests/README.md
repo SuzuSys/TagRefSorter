@@ -72,10 +72,10 @@ TagRenumberer._ensure_sentinel_line_breaker_inplace(nodes: list[LatexNode]) -> N
   - sentinel line breaker が追加されているか否か
   - 追加されている場合、その位置
 
-## TagRenumberer.\_find_replacements_in_aligner
+## TagRenumberer.\_find_rewrites_in_aligner
 
 ```python
-TagRenumberer._find_replacements_in_aligner(nodes: list[LatexNode]) -> list[Rewrite]
+TagRenumberer._find_rewrites_in_aligner(nodes: list[LatexNode]) -> list[Rewrite]
 ```
 
 - テストケース
@@ -95,10 +95,10 @@ TagRenumberer._find_replacements_in_aligner(nodes: list[LatexNode]) -> list[Rewr
   - Replacement.label_start
   - Replacement.label_length
 
-## TagRenumberer.\_find_replacement_in_single_line
+## TagRenumberer.\_find_rewrites_in_single_line
 
 ```python
-TagRenumberer._find_replacement_in_single_line(nodes: list[LatexNode]) -> list[Rewrite]
+TagRenumberer._find_rewrites_in_single_line(nodes: list[LatexNode]) -> list[Rewrite]
 ```
 
 - テストケース
