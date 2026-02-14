@@ -6,8 +6,9 @@ from tagrefsorter.parser import Insertion, Replacement, TagRenumberer
 
 
 @dataclass
-class SingleLineInsertionSpecData:
-    pass
+class AlignerInsertionSpecData:
+    line_label: str
+    nth: int = 1
 
 
 @dataclass
@@ -18,7 +19,19 @@ class ReplacementSpecData:
 
 
 @dataclass
-class CellResultSpec:
+class SingleLineInsertionSpecData:
+    pass
+
+
+@dataclass
+class AlignerCellResultSpec:
+    content: str
+    input: list[LatexNode]
+    specs: list[AlignerInsertionSpecData | ReplacementSpecData] = field(default_factory=list)
+
+
+@dataclass
+class SingleLineCellResultSpec:
     content: str
     input: list[LatexNode]
     specs: list[SingleLineInsertionSpecData | ReplacementSpecData] = field(default_factory=list)
@@ -29,6 +42,13 @@ def find_nth(s: str, sub: str, n: int) -> int:
     for _ in range(n):
         pos = s.index(sub, pos + 1)
     return pos
+
+
+def assert_insertion(content: str, act: Insertion, spec: AlignerInsertionSpecData) -> None:
+    line_pos = find_nth(content, spec.line_label, spec.nth)
+    pos = line_pos + len(spec.line_label)
+    assert act.start == pos
+    assert act.length == 0
 
 
 def assert_single_line_insertion(content: str, act: Insertion) -> None:
@@ -52,7 +72,20 @@ def assert_replacement(content: str, act: Replacement, spec: ReplacementSpecData
     assert act_label.strip() == spec.label.strip()
 
 
-def test_frisl(frisl_case: list[CellResultSpec]) -> None:
+def test_fria(fria_case: list[AlignerCellResultSpec]) -> None:
+    tag_renumberer = TagRenumberer()
+    for case in fria_case:
+        rewrites = tag_renumberer._find_rewrites_in_aligner(case.input)
+        for rewrite, spec in zip(rewrites, case.specs, strict=True):
+            if isinstance(spec, AlignerInsertionSpecData):
+                assert isinstance(rewrite, Insertion)
+                assert_insertion(case.content, rewrite, spec)
+            else:
+                assert isinstance(rewrite, Replacement)
+                assert_replacement(case.content, rewrite, spec)
+
+
+def test_frisl(frisl_case: list[SingleLineCellResultSpec]) -> None:
     tag_renumberer = TagRenumberer()
     for case in frisl_case:
         rewrites = tag_renumberer._find_rewrite_in_single_line(case.input)
