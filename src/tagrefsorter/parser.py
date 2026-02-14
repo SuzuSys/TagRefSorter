@@ -73,7 +73,7 @@ class TagRenumberer:
         for math_block in math_blocks:
             layer0_nodes = math_block.layer0_nodes
             content = math_block.content
-            replacements: list[Rewrite] = []
+            rewrites: list[Rewrite] = []
             aligner_node = next(
                 (
                     token
@@ -86,14 +86,14 @@ class TagRenumberer:
                 # process each line in aligner environment
                 nodes = aligner_node.nodelist
                 self._ensure_sentinel_line_breaker_inplace(nodes)
-                replacements = self._find_rewrites_in_aligner(nodes)
+                rewrites = self._find_rewrites_in_aligner(nodes)
             else:
                 # process single line math block
-                replacements = self._find_replacement_in_single_line(layer0_nodes)
+                rewrites = self._find_replacement_in_single_line(layer0_nodes)
             # apply replacements in reverse order
             out: list[str] = []
             cur = 0
-            for rep in replacements:
+            for rep in rewrites:
                 out.append(content[cur : rep.start])
                 out.append(rf"\tag{{{self.next_tag}}}")
                 if isinstance(rep, Replacement):
