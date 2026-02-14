@@ -23,7 +23,7 @@ FRISL_SPECS: list[list[SingleLineInsertionSpecData | ReplacementSpecData]] = [
 ]
 
 FRIA_SPECS: list[list[AlignerInsertionSpecData | ReplacementSpecData]] = [
-    [AlignerInsertionSpecData(line_label="\na &= b ")],
+    [AlignerInsertionSpecData(prefix="$$\n\\begin{align}\na &= b ")],
     [ReplacementSpecData(tag="\\tag 1", label="1")],
 ]
 

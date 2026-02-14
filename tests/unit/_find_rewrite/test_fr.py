@@ -7,8 +7,7 @@ from tagrefsorter.parser import Insertion, Replacement, TagRenumberer
 
 @dataclass
 class AlignerInsertionSpecData:
-    line_label: str
-    nth: int = 1
+    prefix: str  # left substring of insertion pos.
 
 
 @dataclass
@@ -45,8 +44,8 @@ def find_nth(s: str, sub: str, n: int) -> int:
 
 
 def assert_insertion(content: str, act: Insertion, spec: AlignerInsertionSpecData) -> None:
-    line_pos = find_nth(content, spec.line_label, spec.nth)
-    pos = line_pos + len(spec.line_label)
+    prefix_pos = content.index(spec.prefix)
+    pos = prefix_pos + len(spec.prefix)
     assert act.start == pos
     assert act.length == 0
 
